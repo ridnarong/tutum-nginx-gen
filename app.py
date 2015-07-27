@@ -61,7 +61,7 @@ def write_conf(conf):
   f.close()
 
 def restart_nginx():
-  container = tutum.Container.fetch(os.environ["NGINX_TUTUM_CONTAINER_API_URI"].split("/")[4])
+  container = tutum.Container.fetch(os.environ["NGINX_1_TUTUM_CONTAINER_API_URI"].split("/")[4])
   container.stop()
   container.start()
 
