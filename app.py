@@ -46,7 +46,7 @@ def gen_conf(webapps):
             outer_port = port['outer_port']
             break
         if outer_port:
-          upstream += "server {0}:{1}; \n".format(server['private_ip'],outer_port)
+          upstream += "server http://{0}:{1}; \n".format(server['private_ip'],outer_port)
     upstream += "}};\n server {{ listen 443 ssl; server_name {0}; \n".format(domain)
     upstream += "ssl_certificate {}; \n".format(os.environ["SSL_CERT_PATH"])
     upstream += "ssl_certificate_key {}; \n".format(os.environ["SSL_CERT_KEY_PATH"])
