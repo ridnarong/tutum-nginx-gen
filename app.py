@@ -1,3 +1,4 @@
+import os
 import tutum
 
 webapps = {}
@@ -47,15 +48,15 @@ def gen_conf(webapps):
         if outer_port:
           upstream += "server {0}:{1}; ".format(server['private_ip'],outer_port)
     upstream += "}}; server {{ listen 443 ssl; server_name {0}; ".format(domain)
-    upstream += "ssl_certificate /etc/nginx/ssl/nginx.crt; "
-    upstream += "ssl_certificate_key /etc/nginx/ssl/nginx.key; "
+    upstream += "ssl_certificate {}; ".format(os.environ["SSL_CERT_PATH"])
+    upstream += "ssl_certificate_key {}; ".format(os.environ["SSL_CERT_KEY_PATH"])
     upstream += "location / {{ proxy_pass http://{0}; ".format(domain)
     upstream += " include /etc/nginx/proxy_params; }};"
     conf_txt += upstream
   return conf_txt
 
 def write_conf(conf):
-  f = open('/nginx/default.conf', 'w')
+  f = open(os.environ["CONF_PATH"], 'w')
   f.write(conf)
   f.close()
 
