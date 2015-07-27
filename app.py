@@ -62,8 +62,9 @@ def write_conf(conf):
 
 def restart_nginx():
   container = tutum.Container.fetch(os.environ["NGINX_1_ENV_TUTUM_CONTAINER_API_URI"].split("/")[4])
-  container.stop()
-  container.start()
+  if container.state == "Running":
+    container.stop()
+    container.start()
 
 def process_event(event):
   global webapps
