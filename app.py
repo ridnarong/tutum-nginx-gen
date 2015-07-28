@@ -32,9 +32,9 @@ def gen_conf(webapps):
     	listen 80;
     	server_name _; # This is just an invalid value which will never trigger on a real hostname.
     	return 503;
-    };
+    }
 
-    """
+"""
 
   for domain in webapps:
     upstream = "upstream {0} {{ ".format(domain)
@@ -46,12 +46,12 @@ def gen_conf(webapps):
             outer_port = port['outer_port']
             break
         if outer_port:
-          upstream += "server http://{0}:{1}; \n".format(server['private_ip'],outer_port)
-    upstream += "}};\n server {{ listen 443 ssl; server_name {0}; \n".format(domain)
-    upstream += "ssl_certificate {}; \n".format(os.environ["SSL_CERT_PATH"])
-    upstream += "ssl_certificate_key {}; \n".format(os.environ["SSL_CERT_KEY_PATH"])
-    upstream += "location / {{ \n proxy_pass http://{0}; \n".format(domain)
-    upstream += " include /etc/nginx/proxy_params; }};"
+          upstream += "server {0}:{1}; ".format(server['name'],outer_port)
+    upstream += "}} server {{ listen 443 ssl; server_name {0}; ".format(domain)
+    upstream += "ssl_certificate {}; ".format(os.environ["SSL_CERT_PATH"])
+    upstream += "ssl_certificate_key {}; ".format(os.environ["SSL_CERT_KEY_PATH"])
+    upstream += "location / {{  proxy_pass http://{0}; ".format(domain)
+    upstream += " include /etc/nginx/proxy_params; }}\n"
     conf_txt += upstream
   return conf_txt
 
@@ -78,7 +78,6 @@ def process_event(event):
           webapps[domain].append({
             'name': container.name,
             'node': container.node,
-            'private_ip': container.private_ip,
             'public_dns': container.public_dns,
             'resource_uri': container.resource_uri,
             'container_ports': container.container_ports})
@@ -87,7 +86,6 @@ def process_event(event):
           webapps[domain] = [{
             'name': container.name,
             'node': container.node,
-            'private_ip': container.private_ip,
             'public_dns': container.public_dns,
             'resource_uri': container.resource_uri,
             'container_ports': container.container_ports
