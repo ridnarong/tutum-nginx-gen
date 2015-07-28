@@ -50,8 +50,8 @@ def gen_conf(webapps):
     upstream += "}}\n server {{\n listen 443 ssl;\n server_name {0};\n ".format(domain)
     upstream += "ssl_certificate {};\n".format(os.environ["SSL_CERT_PATH"])
     upstream += "ssl_certificate_key {};\n".format(os.environ["SSL_CERT_KEY_PATH"])
-    upstream += "location / {{  \nproxy_pass http://{0}; \n".format(domain)
-    upstream += " include /etc/nginx/proxy_params; \n}\n}\n"
+    upstream += "location / {{  \nproxy_pass http://{0}; \n}}\n}}\n".format(domain)
+
     conf_txt += upstream
   return conf_txt
 
