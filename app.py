@@ -1,4 +1,5 @@
 import os
+import urllib
 import tutum
 import websocket
 
@@ -59,7 +60,7 @@ def restart_nginx():
       endpoint = "container/%s/exec?" % container_uuid.split("/")[4]
       endpoint += "user=%s&token=%s" % (tutum.user, tutum.apikey)
       endpoint += "&command=%s" % urllib.quote_plus("kill -HUP 1")
-      websocket.WebSocketApp('wss://stream.tutum.co/v1/'+endpoint)
+      websocket.WebSocketApp('wss://stream.tutum.co/v1/'+endpoint, keep_running=False)
 
 def process_event(event):
   global webapps
@@ -77,7 +78,7 @@ def process_event(event):
           changed = True
       elif service.state == "Stopped":
         if domain in webapps:
-          webapps.pop(domain, None)
+          print webapps.pop(domain, None)
           changed = True
       if changed:
         write_conf(gen_conf(webapps))
