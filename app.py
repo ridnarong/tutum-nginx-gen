@@ -1,5 +1,6 @@
 import os
 import tutum
+import websocket
 
 webapps = {}
 
@@ -54,8 +55,11 @@ def write_conf(conf):
 def restart_nginx():
   service = tutum.Service.fetch(os.environ["NGINX_1_ENV_TUTUM_SERVICE_API_URI"].split("/")[4])
   if service.state == "Running":
-    service.stop()
-    service.start()
+    for container_uuid in service.containers:
+      endpoint = "container/%s/exec?" % container_uuid.split("/")[4]
+      endpoint += "user=%s&token=%s" % (tutum.user, tutum.apikey)
+      endpoint += "&command=%s" % urllib.quote_plus("kill -HUP 1")
+      websocket.WebSocketApp('wss://stream.tutum.co/v1/'+endpoint)
 
 def process_event(event):
   global webapps
