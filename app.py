@@ -27,21 +27,22 @@ def gen_conf(webapps):
 """
 
   for domain in webapps:
-    upstream = "upstream {0} {{ ".format(domain)
     outer_port = None
-    for server in webapps[domain]:
-        print server
-        for port in server['container_ports']:
-          if port['inner_port'] == 80:
-            outer_port = port['outer_port']
-            break
-        if outer_port:
-          upstream += "server {0}:{1}; ".format(server['name'],outer_port)
+    service = webapps[domain]
+    print service
+    upstream = "upstream {0} {{ ".format(domain)
+    for container_uuid in service['containers']:
+      container = tutum.Container.fetch(container_uuid.split("/")[4])
+      for port in container.container_ports:
+        if port['inner_port'] == 80:
+          outer_port = port['outer_port']
+          break
+      if outer_port:
+        upstream += "server {0}:{1}; ".format(container.name,outer_port)
     upstream += "}}\n server {{\n listen 443 ssl;\n server_name {0};\n ".format(domain)
     upstream += "ssl_certificate {};\n".format(os.environ["SSL_CERT_PATH"])
     upstream += "ssl_certificate_key {};\n".format(os.environ["SSL_CERT_KEY_PATH"])
     upstream += "location / {{  \nproxy_pass http://{0}; \n}}\n}}\n".format(domain)
-
     conf_txt += upstream
   return conf_txt
 
@@ -51,68 +52,43 @@ def write_conf(conf):
   f.close()
 
 def restart_nginx():
-  container = tutum.Container.fetch(os.environ["NGINX_1_ENV_TUTUM_CONTAINER_API_URI"].split("/")[4])
-  if container.state == "Running":
-    container.stop()
-    container.start()
+  service = tutum.Service.fetch(os.environ["NGINX_1_ENV_TUTUM_SERVICE_API_URI"].split("/")[4])
+  if service.state == "Running":
+    service.stop()
+    service.start()
 
 def process_event(event):
   global webapps
-  if event["type"] == "container":
-    container = tutum.Container.fetch(event["resource_uri"].split("/")[4])
-    domain = has_virtual_host(container.container_envvars)
+  if event["type"] == "service":
+    service = tutum.Service.fetch(event["resource_uri"].split("/")[4])
+    domain = has_virtual_host(service.container_envvars)
     changed = False
     if domain:
-      if container.state == "Running":
-        if domain in webapps:
-          webapps[domain].append({
-            'name': container.name,
-            'node': container.node,
-            'public_dns': container.public_dns,
-            'resource_uri': container.resource_uri,
-            'container_ports': container.container_ports})
+      if service.state == "Running":
+          webapps[domain] = {
+            'name': service.name,
+            'uuid': service.uuid,
+            'containers': service.containers
+          }
           changed = True
-        else:
-          webapps[domain] = [{
-            'name': container.name,
-            'node': container.node,
-            'public_dns': container.public_dns,
-            'resource_uri': container.resource_uri,
-            'container_ports': container.container_ports
-          }]
-          changed = True
-      elif container.state == "Stopped":
+      elif service.state == "Stopped":
         if domain in webapps:
-          for cont in webapps[domain]:
-            if cont['name'] == container.name:
-              webapps[domain].remove(cont)
-              changed = True
+          webapps.pop(domain, None)
+          changed = True
       if changed:
         write_conf(gen_conf(webapps))
         restart_nginx()
 
-containers = tutum.Container.list()
-for cont in containers:
-  container = tutum.Container.fetch(cont.resource_uri.split("/")[4])
-  domain = has_virtual_host(container.container_envvars)
-  if domain and container.state == "Running":
-      if domain in webapps:
-        webapps[domain].append({
-          'name': container.name,
-          'node': container.node,
-          'private_ip': container.private_ip,
-          'public_dns': container.public_dns,
-          'resource_uri': container.resource_uri,
-          'container_ports': container.container_ports})
-      else:
-        webapps[domain] = [{
-          'name': container.name,
-          'node': container.node,
-          'private_ip': container.private_ip,
-          'public_dns': container.public_dns,
-          'resource_uri': container.resource_uri,
-          'container_ports': container.container_ports
-        }]
+service = tutum.Service.list(state="Running")
+for serv in service:
+  service = tutum.Service.fetch(serv.resource_uri.split("/")[4])
+  domain = has_virtual_host(service.container_envvars)
+  if domain:
+      webapps[domain] = {
+        'name': service.name,
+        'uuid': service.uuid,
+        'containers': service.containers
+      }
 write_conf(gen_conf(webapps))
 restart_nginx()
 
