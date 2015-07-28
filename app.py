@@ -47,11 +47,11 @@ def gen_conf(webapps):
             break
         if outer_port:
           upstream += "server {0}:{1}; ".format(server['name'],outer_port)
-    upstream += "}} server {{ listen 443 ssl; server_name {0}; ".format(domain)
-    upstream += "ssl_certificate {}; ".format(os.environ["SSL_CERT_PATH"])
-    upstream += "ssl_certificate_key {}; ".format(os.environ["SSL_CERT_KEY_PATH"])
-    upstream += "location / {{  proxy_pass http://{0}; ".format(domain)
-    upstream += " include /etc/nginx/proxy_params; }}\n"
+    upstream += "}}\n server {{\n listen 443 ssl;\n server_name {0};\n ".format(domain)
+    upstream += "ssl_certificate {};\n".format(os.environ["SSL_CERT_PATH"])
+    upstream += "ssl_certificate_key {};\n".format(os.environ["SSL_CERT_KEY_PATH"])
+    upstream += "location / {{  \nproxy_pass http://{0}; \n".format(domain)
+    upstream += " include /etc/nginx/proxy_params; \n}\n}\n"
     conf_txt += upstream
   return conf_txt
 
