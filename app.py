@@ -18,16 +18,6 @@ def gen_conf(webapps):
     access_log /proc/self/fd/1 vhost;
     error_log /proc/self/fd/2;
 
-    # HTTP 1.1 support
-    proxy_http_version 1.1;
-    proxy_buffering off;
-    proxy_set_header Host $http_host;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $proxy_connection;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
-
     server {
     	listen 80;
     	server_name _; # This is just an invalid value which will never trigger on a real hostname.
